@@ -1,11 +1,5 @@
 """
-Last Update 2024.12.04
-
-ref. mfield_10.py
-
-Draw CHI plasma magnetic line and current vector
-Feed back Bz from Pick up coil
-See separate file(How_to_use.md) for details.
+Last Update 2025.01.22
 
 file Config.
     /CHI_field
