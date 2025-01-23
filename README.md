@@ -46,8 +46,8 @@ Editor : VS code
 
 
 ## Example output
-![Output_example](/Image/psi_cont_19.450.png) 
 
+![Output_example](/Image/psi_cont_19.450_small.png) 
 
 ## Contact
 Takuto MOTOKI: takuto.505521@gmail.com
