@@ -12,7 +12,7 @@ Version : Python 3.9.6
 
 Editor : VS code
 
-> CHI 実験結果を利用するため，QUEST内のサーバーにマウントを推奨
+> CHI 実験結果を利用するため，QUESTサーバーにマウントを推奨
 
 ### File configuration
     /C-MAP
@@ -26,7 +26,6 @@ Editor : VS code
         ├── PFcdata.csv     # PF, TF data
         ├── ele_posi.csv    # Electrode position file
         └── Qvessel.png     # QUEST vessel pic.
-
 
 
 ### Input
@@ -47,6 +46,7 @@ Editor : VS code
 
 
 ## Example output
+
 
 ## Contact
 Takuto MOTOKI: takuto.505521@gmail.com
