@@ -46,6 +46,7 @@ Editor : VS code
 
 
 ## Example output
+![Output_example](/Image/psi_cont_19.450.png) 
 
 
 ## Contact
