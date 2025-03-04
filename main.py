@@ -31,7 +31,7 @@ from copy import deepcopy
 from scipy.ndimage import minimum_position
 
 
-#. Subroutine
+#. Subroutine (Other .py files)
 from mfield_sub_4 import (cd_main, nint, copy_file, cal_sn,
                             get_PF, elect_posi, get_elf,
                             cal_vecp_2, fitting_bz, error_bz, cal_r2,
@@ -40,7 +40,7 @@ from mfield_sub_4 import (cd_main, nint, copy_file, cal_sn,
 import get_data as g    # Get CHI data from QUEST server
 
 
-#. Parameters
+#. Parameters (Parameters.py)
 from Parameter import ele_lim, elect0, elect, flux, SMmin, r_c, z_c
 
 
@@ -193,6 +193,10 @@ if __name__=="__main__":
     SM = 0
 
 
+    #. -- Physical value --
+    pi = 3.1415926535
+    mu = 4.*pi*1.e-7
+
 
     #. -- Coordinate --
     ir_min, ir_max = 0, 100
@@ -206,12 +210,6 @@ if __name__=="__main__":
     z = np.arange(z_min, z_max+dz, dz)
 
     dl = 0.02
-
-
-
-    #. -- Physical value --
-    pi = 3.1415926535
-    mu = 4.*pi*1.e-7
 
 
 
@@ -275,8 +273,6 @@ if __name__=="__main__":
 
 
 
-
-
 #. == Time loop start ==
     for t_ana in tqdm(t_ana_arr, leave = False, desc = "time"):
         print(f"\nShot number : {count}\nt_ana = {t_ana:.3f} ms")
@@ -324,25 +320,23 @@ if __name__=="__main__":
         wq = np.loadtxt("modules/ele_posi.csv", delimiter = ",")
 
         
-        #. Read the binary file mfile.bin
+        #. Generate or Read the binary file mfile.bin
         A_0 = np.zeros((ir_max+1, iz_max+1, ir_max+1, iz_max+1))
 
-            #. ファイル作成用
-            #  2時間くらいかかるので基本読み込みのみ，該当 .bin をコピー
-
-            #for iz2 in range(iz_max+1):
-            #    for ir2 in range(ir_max+1):
-            #        r_mid = r[ir2] + 0.5*dr
-            #        z_mid = z[iz2] + 0.5*dz        
-            #        for iz in range(iz_max+1):
-            #            for ir in range(ir_max+1):
-            #                A_0[ir, iz, ir2, iz2] \
-            #                    = cal_vecp_2(1, np.array([r_mid]), np.array([z_mid]), np.array([1]), r[ir], z[iz])[3]
-            #A_0.tofile('mfile_py.bin')
+        if not os.path.exist(mfile_py.bin):
+            for iz2 in range(iz_max+1):
+               for ir2 in range(ir_max+1):
+                   r_mid = r[ir2] + 0.5*dr
+                   z_mid = z[iz2] + 0.5*dz        
+                   for iz in range(iz_max+1):
+                       for ir in range(ir_max+1):
+                           A_0[ir, iz, ir2, iz2] \
+                               = cal_vecp_2(1, np.array([r_mid]), np.array([z_mid]), np.array([1]), r[ir], z[iz])[3]
+            A_0.tofile('modules/mfile_py.bin')
 
         A_0 = np.fromfile(
-                        'modules/mfile_py.bin', dtype = np.float64
-                        ).reshape(ir_max+1, iz_max+1, ir_max+1, iz_max+1)
+                    'modules/mfile_py.bin', dtype = np.float64
+                    ).reshape(ir_max+1, iz_max+1, ir_max+1, iz_max+1)
         
 
         #. Start calcurating
@@ -389,14 +383,15 @@ if __name__=="__main__":
                     header = "R, Z, A_phi, Br, Bz", comments=" ")
 
 
-
         # Path setting
         time_path = f"{path}/{t_ana:.3f}"
         os.makedirs(f"{time_path}", exist_ok = True)
         os.makedirs(f"{time_path}/img", exist_ok = True)
 
+
         # Coil number
         k = 10  #Number of PF coil -> 11 (0-10)
+
 
 
     #. -- Read Bz from Pick up coil on QUEST --
@@ -1096,6 +1091,7 @@ if __name__=="__main__":
         plot_psi(m_in, t_ana, path)
         plot_z_Bz2(path, t_ana, z_puc, bz_puc_it, min(sq_error[2:]))
         m_in_data.append([t_ana, m_in])
+
 
 
 #. == Time loop end ==
