@@ -1,5 +1,5 @@
 """
-Last Update 2025.01.22
+Last Update 2025.03.04
 
 file Config.
     /CHI_field
@@ -16,16 +16,6 @@ file Config.
         ├── ele_posi.csv    # Electrode position file
         └── Qvessel.png     # QUEST vessel pic.
 
-Parameters
----
-PFcurrent.csv
-- PF, TF coil current
-- I_tor
-- Injection current to wall (wall location can be changed)
-
-Return
----
-Current vectors and magnetic field distribution figure in force-free.
 
 """
 
