@@ -30,13 +30,15 @@ from tqdm import tqdm
 from copy import deepcopy
 from scipy.ndimage import minimum_position
 
+
 #. Subroutine
 from mfield_sub_4 import (cd_main, nint, copy_file, cal_sn,
                             get_PF, elect_posi, get_elf,
                             cal_vecp_2, fitting_bz, error_bz, cal_r2,
                             plot_field, plot_field2, plot_z_Bz, plot_psi, plot_z_Bz2
                         )
-import get_data as g
+import get_data as g    # Get CHI data from QUEST server
+
 
 #. Parameters
 from Parameter import ele_lim, elect0, elect, flux, SMmin, r_c, z_c
@@ -46,7 +48,7 @@ from Parameter import ele_lim, elect0, elect, flux, SMmin, r_c, z_c
 
 
 #. --
-def track_mag_line2(ir, iz, r, z, i_dir, rr10,
+def track_mag_line(ir, iz, r, z, i_dir, rr10,
                     flux_mag_r, flux_mag_z, A_phi, wq0, wq):
     """
     Tracked r and z indices along the magnetic field line.
@@ -60,7 +62,7 @@ def track_mag_line2(ir, iz, r, z, i_dir, rr10,
 
     Returns
     ---
-    wq_f (np.array) : 
+    wq_f    (np.array) : Index of where the magnetic field lines end up
     """
 
     # 入力パラメータに基づいて符号を設定
@@ -134,6 +136,7 @@ def track_mag_line2(ir, iz, r, z, i_dir, rr10,
 
     return wq_f[ir, iz, i_dir]
 
+
 def cal_B(ir, iz, dr, dz, A_phi):
     """A_phi -> Br, Bz
        B = rotA
@@ -141,6 +144,7 @@ def cal_B(ir, iz, dr, dz, A_phi):
     Br = -(A_phi[ir, iz+1] - A_phi[ir, iz-1]) / (2*dz)
     Bz = (1/r[ir]) * (A_phi[ir+1, iz]*r[ir+1] - A_phi[ir-1, iz]*r[ir-1]) / (2*dr)
     return Br, Bz
+
 
 def cal_flux(ir, iz):
     """Calculate flux from A_phi
@@ -150,6 +154,7 @@ def cal_flux(ir, iz):
         = 2pi r A_phi
     """
     return 2*np.pi*r[ir]*A_phi[ir, iz]
+
 
 def update_flux_val(ir, iz, f_max_l, f_min_l, i):
     """Update the maximum and minimum flux values."""    
@@ -177,11 +182,14 @@ def update_flux_val(ir, iz, f_max_l, f_min_l, i):
 #. -- main --
 if __name__=="__main__":
     """Draw CHI plasma magnetic line and current vector"""
+
+
+
     #.  -- Parameters --
-    total_time = 0
+    total_time = 0  # 時間計測
     time_s = time.time()
 
-    cd_main()
+    cd_main()   # Change directory to main directory
     SM = 0
 
 
@@ -208,8 +216,9 @@ if __name__=="__main__":
 
 
     #. -- get data from QUEST server --
-    count = 53034
-    path = f"test30_#{count:.0f}"
+    count = 53034   # Shotnumber to be analyzed
+
+    path = f"test30_#{count:.0f}"   # Folder name
     os.makedirs(f"{path}", exist_ok=True)
     os.makedirs(f"{path}/img", exist_ok=True)
     os.makedirs(f"{path}/data", exist_ok=True)
@@ -220,8 +229,10 @@ if __name__=="__main__":
     # Plasma current
     t_ip, ip = s.get_ip()
 
+
     # Injection current
     t_inj, inj = s.get_inj()
+
     # I_inj time setting
     it0 = np.where(t_inj > 0)[0][0]
     t_inj, inj = t_inj[it0:], inj[it0:]
@@ -231,15 +242,20 @@ if __name__=="__main__":
     i_inj_0 = np.where(inj_re < inj_ave)[0][0] + i_inj_max
     t_inj_0 = t_inj[i_inj_0]*1e3 + 0.05  #[ms]
 
+
     # wall-Injection current
     t_g, G_array = s.get_G()
 
+
     # Bz (pick up coil)
     t_puc, bz_puc = s.get_bz()
+
+    # Height of Bz coil
     z_puc = np.array([0 if i == 0 else 687e-3 - ((i-1) * 150e-3) for i in range(12)])
 
 
-    # Time setting
+
+    # === Analysis Time setting === 
     it_decay = np.argmax(ip)
     t_decay = t_ip[it_decay]*1e3-0.4
 
@@ -250,8 +266,15 @@ if __name__=="__main__":
     #t_ana_arr = [19.4, 19.5, 19.6]
     t_ana_arr = [18.740]
 
+    # ===
+
+
+
     m_in_data = []
     I_close_before = -50e3
+
+
+
 
 
 #. == Time loop start ==
@@ -625,11 +648,11 @@ if __name__=="__main__":
 
                     #. Track mag.line main
                     i_dir = 1   #sign + -> forward
-                    wq_f[ir, iz, i_dir] = track_mag_line2(ir, iz, r, z, i_dir, rr10,
+                    wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
                                                         flux_mag_r, flux_mag_z,
                                                         A_phi, wq0, wq)
                     i_dir = 2   #sign - -> backward
-                    wq_f[ir, iz, i_dir] = track_mag_line2(ir, iz, r, z, i_dir, rr10,
+                    wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
                                                         flux_mag_r, flux_mag_z,
                                                         A_phi, wq0, wq)
             
@@ -648,11 +671,11 @@ if __name__=="__main__":
 
                         #. Track mag.line main
                         i_dir = 1   #sign + -> forward
-                        wq_f[ir, iz, i_dir] = track_mag_line2(ir, iz, r, z, i_dir, rr10,
+                        wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
                                                             flux_mag_r, flux_mag_z,
                                                             A_phi, wq0, wq)
                         i_dir = 2   #sign - -> backward
-                        wq_f[ir, iz, i_dir] = track_mag_line2(ir, iz, r, z, i_dir, rr10,
+                        wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
                                                             flux_mag_r, flux_mag_z,
                                                             A_phi, wq0, wq)
 
