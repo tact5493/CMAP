@@ -470,6 +470,9 @@ if __name__=="__main__":
 
     #. -- Setting elf0 --
         # 2024.10.30 Update by MOTOKI
+        # なんとなくで合わせています．今後はここを要検討
+
+        # Decay phase
         if t_decay <= t_ana < t_inj_0:
             elf0 = np.linspace(1, 0.3, 8)
 
@@ -479,17 +482,18 @@ if __name__=="__main__":
             elf0_points = np.array([1, 3, 6.5])
             coeff = np.polyfit(t_points, elf0_points, 2)
             a, b, c = coeff
-
             y = a*t_ana**2 + b*t_ana + c
-
             elf0 = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1])/5 * y
 
+
+        # Ramp up phase
         else:
             elf0 = np.ones(8)
             #elf0 = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1])/5 * y
             #elf0 = 1.   # 容器壁間を繋ぐ電流 = 1
 
-        plot_counter = 0
+
+        plot_counter = 0    #画像をplot しすぎないように設定
 
 
 
@@ -578,8 +582,9 @@ if __name__=="__main__":
         
 
     #. == Calculating loop ==
+
         if t_ana < t_decay:
-            i_max = 1000
+            i_max = 1000    #Ramp up phase は回数多め
         else:
             i_max = 100
 
@@ -587,6 +592,7 @@ if __name__=="__main__":
 
         sq_error = np.ones(i_max)
         Lcfs = []       #Last closed-flux surface
+
 
         for i in tqdm(range(i_max), leave = False, desc = "i"):
             if i == 0 and t_ana >= t_inj_0: 
@@ -603,6 +609,7 @@ if __name__=="__main__":
             Meg = 0
             elf = np.ones((ir_max,iz_max))
             wr[:] = 1e4
+
 
         #. -- Track mag. line --
             #. wq_f -> 磁力線の交点情報
@@ -626,13 +633,11 @@ if __name__=="__main__":
 
             
             #. Track mag. line main
-            #. rh = I_tor-open - I_tor-close
-            if rh > 1e29:
+            if rh > 1e29:   #rh = I_tor-open - I_tor-close
                 ir = nint((elect[0, 0] - r_min)/dr) -1
                 iz = nint((elect[0, 1] - z_min)/dz)
 
-                #. wq != -1 -> 真空容器内部 or 境界だったら
-                if wq[ir, iz] != -1: 
+                if wq[ir, iz] != -1:    #真空容器内部 or 境界だったら
                     
                     #. Inisialise
                     wq0 = np.copy(wq)
@@ -651,11 +656,13 @@ if __name__=="__main__":
                                                         flux_mag_r, flux_mag_z,
                                                         A_phi, wq0, wq)
             
+
             #. coordinate loop
             for iz in range(iz_max):
                 for ir in range(ir_max):
-                    #. wq != -1 -> 真空容器内部 or 境界だったら
-                    if wq[ir, iz] != -1:
+
+                    if wq[ir, iz] != -1:    #真空容器内部 or 境界だったら
+
                         
                         #. Inisialise
                         wq0 = np.copy(wq)
@@ -674,19 +681,19 @@ if __name__=="__main__":
                                                             flux_mag_r, flux_mag_z,
                                                             A_phi, wq0, wq)
 
-                        #. cell の中心 
-                        r_mid = r[ir] + 0.5*dr
+                        r_mid = r[ir] + 0.5*dr  #cell の中心 
 
 
-                    #. 計算結果の記録
-                        #. 閉磁気面 wq_f = 20
-                        closed_con = (wq_f[ir,iz,1] == 20 and wq_f[ir,iz,2] == 20)
+
+                        #. 計算結果の記録
+                        #閉磁気面内
+                        closed_con = (wq_f[ir,iz,1] == 20 and wq_f[ir,iz,2] == 20)  #wq_f = 20 -> 閉磁気面
                         if closed_con:
                             #. Grid cell が閉じた磁気面に所属している
                             wq_f[ir, iz, 0] = 20
                         
 
-                        #. 閉磁気面以外
+                        #開磁気面（閉磁気面以外）
                         else:
                             #. 磁力線の一方が特定のCHI電極に交差している場合    
                             if ((wq_f[ir, iz, 2] == 1 or wq_f[ir, iz, 2] == 2) and
@@ -696,8 +703,7 @@ if __name__=="__main__":
                                             elect[wq_f[ir, iz, 1]-1, 2] != 0])
                                 ):
 
-                                #. なぞ？
-                                wq_f[ir, iz, 0] = wq_f[ir, iz, 1]
+                                wq_f[ir, iz, 0] = wq_f[ir, iz, 1]   #なぞ？
 
                                 I_tor[wq_f[ir, iz, 0]-1] += \
                                     mu*I_tf_total/(2*pi*r_mid)*elect[wq_f[ir, iz, 0]-1, 2]*dr*dz                        
@@ -711,8 +717,7 @@ if __name__=="__main__":
                                             elect[wq_f[ir, iz, 2]-1, 2] != 0])
                                     ): 
 
-                                #. なぞ？
-                                wq_f[ir, iz, 0] = wq_f[ir, iz, 2]
+                                wq_f[ir, iz, 0] = wq_f[ir, iz, 2]   #なぞ？
                                 
                                 I_tor[wq_f[ir, iz, 0]-1] += \
                                     mu*I_tf_total/(2*pi*r_mid)*elect[wq_f[ir, iz, 0]-1, 2]*dr*dz
@@ -741,8 +746,9 @@ if __name__=="__main__":
                 #. --
             #. -- end coordinate loop
             
-            wq_f[:, :, 3] += wq_f[:, :, 0]
-        #. -- 
+            wq_f[:, :, 3] += wq_f[:, :, 0]  #なんだこれ
+        #. --   end track mag. line
+
 
 
         #. -- Calculate Lambda --
