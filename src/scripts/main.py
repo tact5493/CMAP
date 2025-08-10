@@ -7,8 +7,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 
-import cmap.src.scripts.get_data as g    # Get CHI data from QUEST server
-
 # utils
 from src.utils.mfield_sub import (
     cd_main, nint, copy_file, cal_sn,
