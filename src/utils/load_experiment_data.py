@@ -1,4 +1,4 @@
-import cmap.src.scripts.get_data as g
+import src.scripts.get_data as g
 
 def load_experiment_data(count):
     s = g.get_CHI_Data(count, True)
