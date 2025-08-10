@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from PIL import Image
 import decimal
-import cmap.src.scripts.get_data as g
+import src.scripts.get_data as g
 from sklearn.metrics import r2_score
 import shutil
 

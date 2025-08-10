@@ -7,14 +7,19 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 
+from src.scripts.plot import (
+    plot_field, plot_field2, plot_z_Bz, plot_psi, plot_z_Bz2
+)
+
 # utils
 from src.utils.mfield_sub import (
     cd_main, nint, copy_file, cal_sn,
     get_PF, elect_posi, get_elf,
-    cal_vecp_2, fitting_bz, error_bz, cal_r2     
+    cal_vecp_2, fitting_bz, error_bz, cal_r2
 )
-from src.scripts.plot import plot_field, plot_field2, plot_z_Bz, plot_psi, plot_z_Bz2
-from src.utils.Parameter import ele_lim, elect0, elect, flux, SMmin, r_c, z_c
+from src.utils.Parameter import (
+    ele_lim, elect0, elect, flux, SMmin, r_c, z_c
+)
 from src.utils.get_physical_constants import get_physical_constants
 from src.utils.setup_directories import setup_directories
 from src.utils.get_coordinate_params import get_coordinate_params
@@ -24,6 +29,12 @@ from src.utils.setup_pf_coil import setup_pf_coil
 from src.utils.read_or_generate_A0 import read_or_generate_A0
 from src.utils.save_and_plot_results import save_and_plot_results
 from src.utils.save_best_iteration_files import save_best_iteration_files
+from src.utils.process_pickup_coil_data import process_pickup_coil_data
+from src.utils.cal_vacuum_field import cal_vacuum_field
+from src.utils.decide_filament_position import decide_filament_indices
+from src.utils.set_elf0 import set_elf0
+from src.utils.setup_coil_and_injection import setup_coil_and_injection
+from src.utils.log_analysis_result import log_analysis_result
 
 
 #. --
@@ -229,26 +240,9 @@ if __name__=="__main__":
 
         #. Start calcurating
         #. Calculate the vector potential of the vacuum field for each grid
-        gmin_0, gmax_0 = 1e29, -1e29
-        A_phi = np.zeros((ir_max+1, iz_max+1))
-        mv_field, mv_field_l = np.zeros_like(A_phi), np.zeros_like(A_phi)
-        Bz = np.zeros_like(A_phi)
-
-        for iz in range(iz_max+1):
-            for ir in range(ir_max+1):
-                _, sbz, _, ssbz = cal_vecp_2(k, r_c, z_c, I_pf_c, r[ir], z[iz])
-                A_phi[ir, iz] = ssbz
-                Bz[ir, iz] = sbz
-
-                if elect_posi(r[ir], z[iz]) == True:
-                    mv_field_l[ir, iz] = 1e29
-                else:
-                    mv_field_l[ir, iz] = ssbz * 2*pi*r[ir]
-
-                if gmin_0 > mv_field[ir, iz]:
-                    gmin_0 = mv_field[ir, iz]
-                if gmax_0 < mv_field[ir, iz]:
-                    gmax_0 = mv_field[ir, iz]
+        A_phi, Bz, mv_field, mv_field_l, gmin_0, gmax_0 = cal_vacuum_field(
+            ir_max, iz_max, r, z, I_pf_c, r_c, z_c, elect_posi, cal_vecp_2
+        )
 
         A_phi_0 = deepcopy(A_phi)
         mv_field[:,:] = A_phi_0 * 2*pi*r[:,np.newaxis]
@@ -261,14 +255,18 @@ if __name__=="__main__":
         vac_flux = []
         for i in range(118):
             if flux[i, 0] > 0:
-                sbr, sbz, _, ssbz = cal_vecp_2(k, r_c, z_c, I_pf_c, flux[i, 0], flux[i, 1])
+                sbr, sbz, _, ssbz = cal_vecp_2(
+                                        k, r_c, z_c, I_pf_c, flux[i, 0], flux[i, 1]
+                                    )
                 vac_flux.append([
                                 flux[i,0], flux[i,1], 
                                 ssbz * 2*pi*flux[i,0], sbr, sbz
-                                ])
+                ])
         vac_flux_np = np.array(vac_flux)
-        np.savetxt(f"{path}/MV_field_flux_{n:03}.csv", vac_flux_np, delimiter = ",", fmt = '%.4e',
-                    header = "R, Z, A_phi, Br, Bz", comments=" ")
+        np.savetxt(
+            f"{path}/MV_field_flux_{n:03}.csv", vac_flux_np, delimiter = ",", fmt = '%.4e',
+            header = "R, Z, A_phi, Br, Bz", comments=" "
+        )
 
 
         # Path setting
@@ -283,156 +281,40 @@ if __name__=="__main__":
 
 
     #. -- Read Bz from Pick up coil on QUEST --
-        # get index of t_ana
-        it = np.where(np.isclose(t_puc*1e3, t_ana, atol = 5e-4))[0][0]
-
-        # rearange Bz(t_ana)
-        bz_puc_it = bz_puc[it,:]
-
-        # Fitting 
-        z_puc_fit, bz_puc_fit, weights, fit_params = fitting_bz(z_puc, bz_puc_it)
-
-        # Pick up coil position ref. TAKEDA, master thesis
-        # z = 0.687 ~ -0.813 m
-        iz_puc = np.array([np.where(np.isclose(z, zp, atol=1e-2))[0][0] for zp in z_puc])
-        # z = 0.537 ~ -0.813 m 　(一番上のコイル信号を除外)
-        iz_puc_fit = np.array([np.where(np.isclose(z, zpf, atol=1e-2))[0][0] for zpf in z_puc_fit])
-        # r ~ 0.215 m (mesh の関係で r = 0.22 m)
-        ir_puc = np.where(r == 0.22)[0][0]
-
-        z_re = np.sort(z_puc)[::-1]
-        bz_re = np.concatenate([bz_puc_it[1:6], [bz_puc_it[0]], bz_puc_it[6:]])
-        z_re = z_re[1:]
-        bz_re = bz_re[1:]
-
-        z_re = np.delete(z_re, [3, 5])
-        bz_re = np.delete(bz_re, [3, 5])
-        r2_lin, r2_quad = cal_r2(z_re, bz_re)
-
+        (
+            bz_puc_it, z_puc_fit, bz_puc_fit, 
+            weights, fit_params, 
+            iz_puc, iz_puc_fit, ir_puc, 
+            z_re, bz_re, r2_lin, r2_quad
+        ) = process_pickup_coil_data(t_ana, t_puc, bz_puc, z_puc, z, r)
 
 
     #. -- Filament current popsition
-        # Z position
-        if t_decay <= t_ana < t_inj_0:
-            ikz0 = iz_puc_fit
-            # マイナス方向にずらしていく
-            ikz_dir = 1    #or +1
-
-        
-        elif t_ana >= t_inj_0:    #Bz 分布が2次関数のFitting の方が支配的        
-            # Bz の最小値を探索 （Fitting した9点の中から）
-            ibz_re_min = np.argmin(bz_re)
-            z_re_min = z_re[ibz_re_min]
-            iz_puc_min = np.abs(z - z_re_min).argmin()
-            z_puc_min = z[iz_puc_min]
-            ikz0 = iz_puc_min
-            # マイナス方向にずらしていく
-            ikz_dir = 1    #or +1
-
-        else:
-            kz0 = -1.5
-            ikz0 = nint((kz0 - z_min)/dz)
-        
-            # マイナス方向にずらしていく
-            ikz_dir = 1    #or +1
-
-
-        # R position
-        if t_ana >= t_decay:
-            t1, r1 = 18.9, 0.6
-            t2, r2 = 19.7, 0.3
-
-            a = (r2-r1) / (t2-t1)
-            b = r1 -a*t1
-
-            kr0 = a*t_ana + b
-
-        else:
-            kr0 = 0.3
-
-        ikr0 = nint((kr0 - r_min)/dr)        
-        ik = 0
-        ikr, ikz = ikr0, ikz0
-
+        ikr0, ikz0, ikz_dir, ikr, ikz = decide_filament_indices(
+            t_ana, t_decay, t_inj_0, iz_puc_fit, z, z_re, bz_re, z_min, dz, nint,
+            r_min, dr
+        )
 
 
     #. -- Setting elf0 --
         # 2024.10.30 Update by MOTOKI
         # なんとなくで合わせています．今後はここを要検討
-
-        # Decay phase
-        if t_decay <= t_ana < t_inj_0:
-            elf0 = np.linspace(1, 0.3, 8)
-
-        elif t_ana >= t_inj_0:
-            # 3点を通る曲線を2次関数でFitting
-            t_points = np.array([19.2, 19.4, 19.6])
-            elf0_points = np.array([1, 3, 6.5])
-            coeff = np.polyfit(t_points, elf0_points, 2)
-            a, b, c = coeff
-            y = a*t_ana**2 + b*t_ana + c
-            elf0 = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1])/5 * y
-
-
-        # Ramp up phase
-        else:
-            elf0 = np.ones(8)
-            #elf0 = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1])/5 * y
-            #elf0 = 1.   # 容器壁間を繋ぐ電流 = 1
-
-
+        elf0 = set_elf0(t_ana, t_decay, t_inj_0)
         plot_counter = 0    #画像をplot しすぎないように設定
 
 
 
 
     #. Setup coil, Injection
-        it_g = np.where(np.isclose(t_g*1e3, t_ana, atol = 1e-4))[0][0]
-        G = np.array([G_array[it_g,0], np.sum(G_array[it_g,1:4]), G_array[it_g,4]])
-        #G = np.array([np.sum(G_array[it_g,0:3]), G_array[it_g,3], G_array[it_g,4]])
-        G[-100 < G] = 0
-        G_round = np.round(G, -2)
-        if t_ana >= t_inj_0 and G_round[1] == 0:
-            G_round[1] = -100
-
-        #. Injection Area
-        I_inA = np.zeros(21)
-        I_inA[2:4] = 1      #Fortran 3, 4 -> Python 2, 3
-        I_inA[4:8] = 2      #Fortran 5, 6, 7, 8 -> Python 4, 5, 6, 7
-        I_inA[8:10] = 3     #Fortran 9, 10 -> Python 8, 9
-        
-        I_inj_total = np.sum(G)
-        I_inj = np.zeros(21)
-        I_inj[1:4] = G_round[0:3]
-        
-
-
-    #. Setup Toroidal current
-        it_ip = np.where(np.isclose(t_ip*1e3, t_ana, atol = 5e-4))[0][0]
-        I_tor_def = -np.round(ip[it_ip]*1e3, -2)   #[kA]
-
+        G_round, I_inA, I_inj, I_tor_def, I_inj_total = setup_coil_and_injection(
+            t_ana, t_g, G_array, t_inj_0, t_ip, ip, nint
+        )
 
 
     #. log file
-        with open(f"{time_path}/_log.csv", "w") as f:
-            f.write(f"#{count}, t_ana = {t_ana:.3f} ms\n")
-            f.write(f"PF3-1, 3-2, 2, 1, 7, 6, 5-2, 5-1, 4-1, 4-2, 4-3\n")
-            for i,val in enumerate(I_pf_c[:11]):
-                if i == len(I_pf_c[:11])-1:
-                    f.write(f"{val}\n")
-                else:
-                    f.write(f"{val}, ")
-            f.write(f"I_tor_def [A], {I_tor_def}\n")
-            f.write(f"G [A], {G_round[0]}, {G_round[1]}, {G_round[2]}\n")
-            f.write(f"elf0 ,{elf0}\n")
-            f.write(f"t_decay [ms],{t_decay:.2f}\n")
-            f.write(f"z [m], ")
-            for zf in z_puc_fit:
-                f.write(f"{zf:.2f}, ")
-            f.write(f"\nbz weight, ")
-            for w in weights:
-                f.write(f"{w}, ")
-
+        log_analysis_result(
+            f"{time_path}/_log.csv", count, t_ana, I_pf_c, I_tor_def, G_round, elf0, t_decay, z_puc_fit, weights
+        )
 
 
         # Cal vacuum field on Pick up coil position
@@ -958,7 +840,11 @@ if __name__=="__main__":
 
     #. == end calculate lambda ==
 
-        save_best_iteration_files(I_close_store, t_ana, path, m_in, plot_field2, plot_psi, plot_z_Bz2, z_puc, bz_puc_it, sq_error)
+        save_best_iteration_files(
+            I_close_store, t_ana, path, m_in, 
+            plot_field2, plot_psi, plot_z_Bz2, 
+            z_puc, bz_puc_it, sq_error
+        )
         m_in_data.append([t_ana, m_in])
 
 
