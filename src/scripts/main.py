@@ -150,11 +150,9 @@ def update_flux_val(ir, iz, f_max_l, f_min_l, i):
     """Update the maximum and minimum flux values."""    
     #. flux value
     flux_eva = cal_flux(ir, iz)
-    
     #. max
     if f_max_l[i] > flux_eva:
         f_max_l[i] = flux_eva
-    
     #. min
     if f_min_l[i] < flux_eva:
         f_min_l[i] = flux_eva
@@ -176,8 +174,10 @@ if __name__=="__main__":
     SM = 0
 
     pi, mu = get_physical_constants()  # Get physical constants
-    (ir_min, ir_max, dr, r_min, r_max, r, 
-        iz_min, iz_max, dz, z_min, z_max, z, dl) = get_coordinate_params()
+    (
+        ir_min, ir_max, dr, r_min, r_max, r, 
+        iz_min, iz_max, dz, z_min, z_max, z, dl
+    ) = get_coordinate_params()
     
 
 
@@ -206,8 +206,6 @@ if __name__=="__main__":
 
     # ===
 
-
-
     m_in_data = []
     I_close_before = -50e3
 
@@ -220,9 +218,7 @@ if __name__=="__main__":
         #. TF coil
         PF_coil, TF_coil = get_PF()
         I_tf_total = TF_coil*16        
-
-        #. PF coil
-        I_pf_c = setup_pf_coil(PF_coil)
+        I_pf_c = setup_pf_coil(PF_coil) #. PF coil
 
 
         #. -- Calcilate electode -- 
@@ -240,8 +236,12 @@ if __name__=="__main__":
 
         #. Start calcurating
         #. Calculate the vector potential of the vacuum field for each grid
-        A_phi, Bz, mv_field, mv_field_l, gmin_0, gmax_0 = cal_vacuum_field(
-            ir_max, iz_max, r, z, I_pf_c, r_c, z_c, elect_posi, cal_vecp_2
+        (
+            A_phi, Bz, mv_field, mv_field_l, 
+            gmin_0, gmax_0
+        ) = cal_vacuum_field(
+            ir_max, iz_max, r, z, 
+            I_pf_c, r_c, z_c, elect_posi, cal_vecp_2
         )
 
         A_phi_0 = deepcopy(A_phi)
@@ -268,12 +268,10 @@ if __name__=="__main__":
             header = "R, Z, A_phi, Br, Bz", comments=" "
         )
 
-
         # Path setting
         time_path = f"{path}/{t_ana:.3f}"
         os.makedirs(f"{time_path}", exist_ok = True)
         os.makedirs(f"{time_path}/img", exist_ok = True)
-
 
         # Coil number
         k = 10  #Number of PF coil -> 11 (0-10)
@@ -288,7 +286,6 @@ if __name__=="__main__":
             z_re, bz_re, r2_lin, r2_quad
         ) = process_pickup_coil_data(t_ana, t_puc, bz_puc, z_puc, z, r)
 
-
     #. -- Filament current popsition
         ikr0, ikz0, ikz_dir, ikr, ikz = decide_filament_indices(
             t_ana, t_decay, t_inj_0, iz_puc_fit, z, z_re, bz_re, z_min, dz, nint,
@@ -302,14 +299,10 @@ if __name__=="__main__":
         elf0 = set_elf0(t_ana, t_decay, t_inj_0)
         plot_counter = 0    #画像をplot しすぎないように設定
 
-
-
-
     #. Setup coil, Injection
         G_round, I_inA, I_inj, I_tor_def, I_inj_total = setup_coil_and_injection(
             t_ana, t_g, G_array, t_inj_0, t_ip, ip, nint
         )
-
 
     #. log file
         log_analysis_result(
@@ -367,7 +360,6 @@ if __name__=="__main__":
         for i in tqdm(range(i_max), leave = False, desc = "i"):
             if i == 0 and t_ana >= t_inj_0: 
                 I_tor_def_new = -150*1e3
-
             else:
                 I_tor_def_new = deepcopy(I_tor_def)
         
@@ -406,16 +398,12 @@ if __name__=="__main__":
             if rh > 1e29:   #rh = I_tor-open - I_tor-close
                 ir = nint((elect[0, 0] - r_min)/dr) -1
                 iz = nint((elect[0, 1] - z_min)/dz)
-
                 if wq[ir, iz] != -1:    #真空容器内部 or 境界だったら
-                    
                     #. Inisialise
                     wq0 = np.copy(wq)
-
                     #. Vector potentials at grid points.
                     rr10 = (A_phi[ir, iz] + A_phi[ir, iz+1])*r[ir] \
                             + (A_phi[ir+1, iz] + A_phi[ir+1, iz+1])*r[ir+1]
-
                     #. Track mag.line main
                     i_dir = 1   #sign + -> forward
                     wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
@@ -430,17 +418,12 @@ if __name__=="__main__":
             #. coordinate loop
             for iz in range(iz_max):
                 for ir in range(ir_max):
-
                     if wq[ir, iz] != -1:    #真空容器内部 or 境界だったら
-
-                        
                         #. Inisialise
                         wq0 = np.copy(wq)
-
                         #. Vector potentials at grid points.
                         rr10 = (A_phi[ir, iz] + A_phi[ir, iz+1])*r[ir] \
                             + (A_phi[ir+1, iz] + A_phi[ir+1, iz+1])*r[ir+1]
-
                         #. Track mag.line main
                         i_dir = 1   #sign + -> forward
                         wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
@@ -450,7 +433,6 @@ if __name__=="__main__":
                         wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
                                                             flux_mag_r, flux_mag_z,
                                                             A_phi, wq0, wq)
-
                         r_mid = r[ir] + 0.5*dr  #cell の中心 
 
 
@@ -461,8 +443,6 @@ if __name__=="__main__":
                         if closed_con:
                             #. Grid cell が閉じた磁気面に所属している
                             wq_f[ir, iz, 0] = 20
-                        
-
                         #開磁気面（閉磁気面以外）
                         else:
                             #. 磁力線の一方が特定のCHI電極に交差している場合    
@@ -477,8 +457,6 @@ if __name__=="__main__":
 
                                 I_tor[wq_f[ir, iz, 0]-1] += \
                                     mu*I_tf_total/(2*pi*r_mid)*elect[wq_f[ir, iz, 0]-1, 2]*dr*dz                        
-
-
                             #. 磁力線の他方の端が特定の電極に交差している場合
                             elif (
                                 (wq_f[ir, iz, 1] == 1 or wq_f[ir, iz, 1] == 2) 
@@ -488,20 +466,16 @@ if __name__=="__main__":
                                         wq_f[ir, iz, 2] != 20,
                                         elect[wq_f[ir, iz, 2]-1, 2] != 0]
                                     ))
-                            ):
-                            
+                            ):                            
                                 wq_f[ir, iz, 0] = wq_f[ir, iz, 2]   #なぞ？
                                 
                                 I_tor[wq_f[ir, iz, 0]-1] += \
                                     mu*I_tf_total/(2*pi*r_mid)*elect[wq_f[ir, iz, 0]-1, 2]*dr*dz
-                                
-
                             #. 電極の間に位置する場合
                             elif (
                                 np.all(elect[wq_f[ir, iz, 1:3]-1, 2] > 0.1)
                                 and np.all(wq_f[ir, iz, 1:3] != 20)
                             ):
-
                                 #. 電極間で特定の範囲にある場合
                                 if (
                                     3 <= wq_f[ir,iz,1] <= 10 
@@ -517,7 +491,6 @@ if __name__=="__main__":
                                     #     elf[ir,iz] = elf0
                     
                     #. --   endif wq != -1
-                    
                 #. --
             #. -- end coordinate loop
             
@@ -525,13 +498,11 @@ if __name__=="__main__":
         #. --   end track mag. line
 
 
-
         #. -- Calculate Lambda --
             J_inj_p0[:], J_inj_p[:], J_inj_p2[:] = 0, 0, 0 
             J_inj_e0[:], J_inj_e[:] = 0, 0
 
             f_max, f_min = -1.e29, 1.e29
-
             
             #. 分割した電極本数(20-1) +1して回すので
             for i_ele in range(19): 
@@ -539,14 +510,11 @@ if __name__=="__main__":
                 w_ele = elect[i_ele+1, 0] - elect[i_ele, 0]
                 h_ele = elect[i_ele+1, 1] - elect[i_ele, 1]
                 k0 = nint(np.sqrt(w_ele**2 + h_ele**2)/dl)
-                
-                
                 if (
                     elect[i_ele, 0] > 0.1
                     and elect[i_ele+1, 0] > 0.1
                     and k0 != 0
                 ):
-
                     #. 電極の幅 (R)
                     w_ele = (elect[i_ele+1, 0] - elect[i_ele, 0])/k0
                     #. 電極の幅 (Z)
@@ -556,7 +524,6 @@ if __name__=="__main__":
                     
                     #. 分割したセグメントの合計
                     for k in range(int(k0)):
-
                         ir_mid = nint((elect[i_ele, 0] + w_ele*(0.5 + k) - r_min)/dr)
                         iz_mid = nint((elect[i_ele, 1] + h_ele*(0.5 + k) - z_min)/dz)                    
                         
@@ -608,17 +575,14 @@ if __name__=="__main__":
 
             for i_ele in range(19):
                 k1 = int(I_inA[i_ele])
-                
                 if (
                     abs(J_inj_e[k1]/sum(J_inj_e[:])) > 0.01 
                     and k1 != 0
                 ):
-
                     if J_inj_e[k1]/J_inj_e0[k1] > 0:
                         lamb[i_ele] = elect[i_ele, 2]*I_inj[k1]/J_inj_e[k1]
                     else:
                         emh = False
-                
                 elif (
                     abs(J_inj_e[k1]/sum(J_inj_e[:])) <= 0.01
                     and k1 != 0
@@ -643,24 +607,20 @@ if __name__=="__main__":
             
             for iz in range(iz_max):
                 for ir in range(ir_max):
-                    
                     r_mid = r[ir] + 0.5*dr
                     z_mid = z[iz] + 0.5*dz
-
                 #. Close surface
                     if wq_f[ir,iz,3] == 20:
                         I_tor_close = mu*I_tf_total/(2*pi*r_mid)*dr*dz
                         I_tor[-1] += I_tor_close
                         A_phi_close[:,:] += I_tor_close*A_0[:,:,ir,iz]
                         wq_l[ir,iz] = ir
-
                 #. Open surface
                     elif wq_f[ir,iz,3] != 0:
                         # 2024.10.30 Update by MOTOKI
                         I_tor_open = mu*I_tf_total/(2*pi*r_mid)*lamb[wq_f[ir,iz,3]-1]*elf[ir,iz]*dr*dz
                         I_tor[wq_f[ir,iz,3]-1] += I_tor_open
                         A_phi_open[:,:] += I_tor_open*A_0[:,:,ir,iz]
-
             Itor_cal_inp = np.abs(I_tor_def_new) - np.abs(np.sum(I_tor[0:20]))
             rh = 1.e30
 
@@ -668,10 +628,8 @@ if __name__=="__main__":
             if t_ana >= t_decay:
                 # Itor が減少していく段階では λ_close > λ_open 
                 lambda_fac = 2/mu
-
             else:
                 lambda_fac = np.max(np.abs(lamb[0:20]))
-
 
             if Itor_cal_inp > 0:
                 if (
@@ -681,7 +639,6 @@ if __name__=="__main__":
                     
                     lamb[-1] = (I_tor_def_new - np.sum(I_tor[0:20])) / I_tor[-1]
                     A_phi[:,:] = deepcopy(A_phi_0[:,:])
-
                 else:
                     lamb[-1] = 0
                     ik += 1
@@ -689,15 +646,12 @@ if __name__=="__main__":
                     if ik == 1:
                         ikr = ikr0
                         ikz = ikz0
-                        
                     elif ik == 2:
                         ikr = ikr0 + 1
                         ikz = ikz0
-
                     elif ik == 3:
                         ikr = ikr0
                         ikz = ikz0 + ikz_dir
-
                     else:
                         if SMmin[1] < SMmin[2]:
                             ikr0 += 1
@@ -712,15 +666,13 @@ if __name__=="__main__":
                     # フィラメント電流位置がgrid を超えたら終了
                     if ikr > ir_max-1 or np.any(ikz > iz_max-1):
                         break
-                    
                     # 2024.11.04 Update by MOTOKI
                     if t_decay <= t_ana < t_inj_0:
                         # z_puc の位置に9点 Z = 0.537, 0.387, 0.237, 0, -0.213, -0.363, -0.513, -0.663, -0.813 m
                         A_phi[:, :] = A_phi_0[:, :] + (I_tor_def_new - np.sum(I_tor[0:20])) / 9 \
-                                     * np.sum(
+                                    * np.sum(
                                              [weights[i] * A_0[:, :, ikr, ikz[i]] for i in range(9)], axis = 0
-                                        )/np.sum(weights)
-
+                                    )/np.sum(weights)
                     elif t_ana >= t_inj_0 or t_ana < t_decay:     #Bz 分布が2次関数のFitting の方が支配的
                         # min(Bz_puc) を中心に9点
                         A_phi[:, :] = A_phi_0[:, :] + (I_tor_def_new - np.sum(I_tor[0:20])) / 9 \
@@ -728,13 +680,10 @@ if __name__=="__main__":
                                             A_0[:,:,ikr,ikz-1] + A_0[:,:,ikr,ikz] + A_0[:,:,ikr,ikz+1] 
                                             + A_0[:,:,ikr-1,ikz-1] + A_0[:,:,ikr-1,ikz] + A_0[:,:,ikr-1,ikz+1]
                                             + A_0[:,:,ikr+1,ikz-1] + A_0[:,:,ikr+1,ikz] + A_0[:,:,ikr+1,ikz+1]
-                                            )
-
+                                        )
                     rh = I_tor_def_new - np.sum(I_tor[:-1])
-
             I_tor[-1] *= lamb[-1]
             A_phi[:,:] += A_phi_close[:,:]*lamb[-1] + A_phi_open[:,:]
-
 
             #前回計算結果(A_phi_before)と比較
             SM = np.sum((A_phi[:,:] - A_phi_before[:,:])**2) / ((ir_max+1)*(iz_max+1))
@@ -769,7 +718,6 @@ if __name__=="__main__":
 
                 for iz in range(iz_max):
                     for ir in range(ir_max):
-
                         # for vector figure
                         jf_con = (
                             iz != iz_max
@@ -789,9 +737,7 @@ if __name__=="__main__":
                             else:
                                 jr = br * lamb[wq_f[ir,iz,3]-1]*(r[ir]+0.5*dr)/np.abs(I_inj_total)/2*(1/flux_mag_max)*elf[ir,iz]
                                 jz = bz * lamb[wq_f[ir,iz,3]-1]*(r[ir]+0.5*dr)/np.abs(I_inj_total)/2*(1/flux_mag_max)*elf[ir,iz]
-                            
                             jf.append([r[ir]+0.5*dr, z[iz]+0.5*dz, jr, jz])
-
                 jf_array = np.array(jf)
 
                 #. Flux file
@@ -819,8 +765,6 @@ if __name__=="__main__":
 
                 #if t_ana >= t_decay:
                 save_con = (sq_error[i] <= min(sq_error[2:])) and i >= 2
-                #else:
-                #    save_con = True
 
                 if save_con:
                     I_close_store.append([int(i), I_tor[-1]])
@@ -835,9 +779,6 @@ if __name__=="__main__":
             if plot_counter > 50:
                 break
         #. -- 
-
-
-
     #. == end calculate lambda ==
 
         save_best_iteration_files(
@@ -857,4 +798,6 @@ if __name__=="__main__":
     time_e = time.time()
     total_time = (time_e - time_s)
     
-    print("\n"+f"Time loop Total time : {(total_time)//3600:.0f}h {(total_time)%60:.0f}m {(total_time)%60:.0f}s")
+    print(
+        "\n"+f"Time loop Total time : {(total_time)//3600:.0f}h {(total_time)%60:.0f}m {(total_time)%60:.0f}s"
+    )
