@@ -12,18 +12,36 @@ Editor : VS code
 > CHI 実験結果を利用するため，QUESTサーバーにマウントを推奨
 
 ### File configuration
-    /C-MAP
-    │
-    ├── main.py             # Main file
-    ├── mfield_sub.py       # Function file
-    ├── Parameter.py        # Paramters file
-    ├── get_data.py         # Get CHI data from QUEST server
-    └── modules
-        ├── mfile.bin       # A_phi binary data
-        ├── PFcdata.csv     # PF, TF data
-        ├── ele_posi.csv    # Electrode position file
-        └── Qvessel.png     # QUEST vessel pic.
-
+```
+CMAP/
+├── README.md
+├── README.md
+├── src/
+│   ├── scripts/
+│   │   ├── get_data.py
+│   │   ├── main.py
+│   │   ├── plot.py
+│   │   └── ...
+│   └── utils/
+│       ├── get_coordinate_params.py
+│       ├── get_physical_constants.py
+│       ├── load_experiment_data.py
+│       ├── mfield_sub.py
+│       ├── Parameter.py
+│       └── ...
+├── data/
+│   ├── .gitkeep
+│   ├── ele_posi.csv
+│   ├── electrode.csv
+│   ├── PFdata.csv
+│   ├── quest_lines.txt
+│   └── Qvessel.png
+├── Image/
+│   ├── .gitkeep
+│   ├── psi_cont_19.450_small.png
+│   └── psi_cont_19.450.png
+└── ...
+```
 
 ### Input
 - 磁気コイル
