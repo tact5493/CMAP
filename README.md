@@ -7,11 +7,8 @@ Taylor 緩和後($\lambda=const.$) を仮定している．
 
 ### Recommended environment
 OS : mac os 
-
 Version : Python 3.9.6
-
 Editor : VS code
-
 > CHI 実験結果を利用するため，QUESTサーバーにマウントを推奨
 
 ### File configuration

@@ -1,44 +1,14 @@
-"""
-Last Update 2025.03.04
-
-file Config.
-    /CHI_field
-    │
-    ├── Code
-        ├── mfield.py       # Main file
-        ├── mfield_sub.py   # Function file
-        ├── Parameter.py    # Paramters file
-        └── get_data.py     # Get CHI data from QUEST server
-    │
-    └── modules
-        ├── mfile.bin       # A_phi binary data
-        ├── PFcdata.csv     # PF, TF data
-        ├── ele_posi.csv    # Electrode position file
-        └── Qvessel.png     # QUEST vessel pic.
-
-
-"""
-
-
-
-
-
-#. Default library
 import os, time, numpy as np
 from icecream import ic
 from tqdm import tqdm
 from copy import deepcopy
 from scipy.ndimage import minimum_position
-
-
-#. Subroutine (Other .py files)
-from mfield_sub_4 import (cd_main, nint, copy_file, cal_sn,
+from mfield_sub import (cd_main, nint, copy_file, cal_sn,
                             get_PF, elect_posi, get_elf,
                             cal_vecp_2, fitting_bz, error_bz, cal_r2,
                             plot_field, plot_field2, plot_z_Bz, plot_psi, plot_z_Bz2
                         )
 import get_data as g    # Get CHI data from QUEST server
-
 
 #. Parameters (Parameters.py)
 from Parameter import ele_lim, elect0, elect, flux, SMmin, r_c, z_c
@@ -323,7 +293,7 @@ if __name__=="__main__":
         #. Generate or Read the binary file mfile.bin
         A_0 = np.zeros((ir_max+1, iz_max+1, ir_max+1, iz_max+1))
 
-        if not os.path.exist(mfile_py.bin):
+        if not os.path.exist("modules/mfile_py.bin"):
             for iz2 in range(iz_max+1):
                for ir2 in range(ir_max+1):
                    r_mid = r[ir2] + 0.5*dr
