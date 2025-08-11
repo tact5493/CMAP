@@ -94,10 +94,10 @@ def track_mag_line(ir, iz, r, z, i_dir, rr10,
 
             # A_phi の評価
             A_phi_eva_new = abs(
-                (A_phi[ir_eva, iz_eva] + A_phi[ir_eva, iz_eva+1]) * r[ir_eva]
-                + (A_phi[ir_eva+1, iz_eva] + A_phi[ir_eva+1, iz_eva+1]) * r[ir_eva+1]
-                - rr10
-            )
+                                (A_phi[ir_eva, iz_eva] + A_phi[ir_eva, iz_eva+1]) * r[ir_eva]
+                                + (A_phi[ir_eva+1, iz_eva] + A_phi[ir_eva+1, iz_eva+1]) * r[ir_eva+1]
+                                - rr10
+                            )
 
             # 最適な方向を更新
             if A_phi_eva > A_phi_eva_new:
@@ -240,16 +240,13 @@ if __name__=="__main__":
             A_phi, Bz, mv_field, mv_field_l, 
             gmin_0, gmax_0
         ) = cal_vacuum_field(
-            ir_max, iz_max, r, z, 
-            I_pf_c, r_c, z_c, elect_posi, cal_vecp_2
-        )
+                ir_max, iz_max, r, z, 
+                I_pf_c, r_c, z_c, elect_posi, cal_vecp_2
+            )
 
         A_phi_0 = deepcopy(A_phi)
         mv_field[:,:] = A_phi_0 * 2*pi*r[:,np.newaxis]
 
-        n = 0
-        np.savetxt(f"{path}/data/MV_field.csv", mv_field.T, delimiter=",", fmt="%12.4e")
-        np.savetxt(f"{path}/data//MV_field_l.csv", mv_field_l.T, delimiter=",", fmt="%12.4e")
         
         # Calculate vacuum field on flux loop positions
         vac_flux = []
@@ -259,12 +256,23 @@ if __name__=="__main__":
                                         k, r_c, z_c, I_pf_c, flux[i, 0], flux[i, 1]
                                     )
                 vac_flux.append([
-                                flux[i,0], flux[i,1], 
-                                ssbz * 2*pi*flux[i,0], sbr, sbz
+                    flux[i,0], flux[i,1], 
+                    ssbz * 2*pi*flux[i,0], sbr, sbz
                 ])
         vac_flux_np = np.array(vac_flux)
+        
+        n = 0
         np.savetxt(
-            f"{path}/MV_field_flux_{n:03}.csv", vac_flux_np, delimiter = ",", fmt = '%.4e',
+            f"{path}/data/MV_field.csv", 
+            mv_field.T, delimiter=",", fmt="%12.4e"
+        )
+        np.savetxt(
+            f"{path}/data//MV_field_l.csv", 
+            mv_field_l.T, delimiter=",", fmt="%12.4e"
+        )
+        np.savetxt(
+            f"{path}/MV_field_flux_{n:03}.csv", 
+            vac_flux_np, delimiter = ",", fmt = '%.4e',
             header = "R, Z, A_phi, Br, Bz", comments=" "
         )
 
@@ -288,9 +296,10 @@ if __name__=="__main__":
 
     #. -- Filament current popsition
         ikr0, ikz0, ikz_dir, ikr, ikz = decide_filament_indices(
-            t_ana, t_decay, t_inj_0, iz_puc_fit, z, z_re, bz_re, z_min, dz, nint,
-            r_min, dr
-        )
+                                            t_ana, t_decay, t_inj_0, iz_puc_fit, 
+                                            z, z_re, bz_re, z_min, dz, nint,
+                                            r_min, dr
+                                        )
 
 
     #. -- Setting elf0 --
@@ -306,7 +315,9 @@ if __name__=="__main__":
 
     #. log file
         log_analysis_result(
-            f"{time_path}/_log.csv", count, t_ana, I_pf_c, I_tor_def, G_round, elf0, t_decay, z_puc_fit, weights
+            f"{time_path}/_log.csv", count, t_ana, 
+            I_pf_c, I_tor_def, G_round, elf0, 
+            t_decay, z_puc_fit, weights
         )
 
 
@@ -386,12 +397,16 @@ if __name__=="__main__":
             #. Setup magnitude of flux and wq
             for iz in range(iz_max):
                 for ir in range(ir_max):
-                    flux_mag_r[ir, iz] = -((A_phi[ir, iz+1] + A_phi[ir+1, iz+1])*0.5\
-                                        -(A_phi[ir, iz] + A_phi[ir+1, iz])*0.5)/dz
+                    flux_mag_r[ir, iz] = (
+                                             -((A_phi[ir, iz+1] + A_phi[ir+1, iz+1])*0.5
+                                             -(A_phi[ir, iz] + A_phi[ir+1, iz])*0.5)/dz
+                                         )
                     
-                    flux_mag_z[ir, iz] = ((A_phi[ir+1, iz] + A_phi[ir+1, iz+1])*0.5*r[ir+1]\
-                                        -(A_phi[ir, iz] + A_phi[ir, iz+1])*0.5*r[ir])\
-                                        /(dr * (r[ir]+0.5*dr))
+                    flux_mag_z[ir, iz] = (
+                                             ((A_phi[ir+1, iz] + A_phi[ir+1, iz+1])*0.5*r[ir+1]
+                                             -(A_phi[ir, iz] + A_phi[ir, iz+1])*0.5*r[ir])
+                                             /(dr * (r[ir]+0.5*dr))
+                                         )
 
             
             #. Track mag. line main
@@ -406,13 +421,17 @@ if __name__=="__main__":
                             + (A_phi[ir+1, iz] + A_phi[ir+1, iz+1])*r[ir+1]
                     #. Track mag.line main
                     i_dir = 1   #sign + -> forward
-                    wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
-                                                        flux_mag_r, flux_mag_z,
-                                                        A_phi, wq0, wq)
+                    wq_f[ir, iz, i_dir] = track_mag_line(
+                                            ir, iz, r, z, i_dir, rr10,
+                                            flux_mag_r, flux_mag_z,
+                                            A_phi, wq0, wq
+                                        )
                     i_dir = 2   #sign - -> backward
-                    wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
-                                                        flux_mag_r, flux_mag_z,
-                                                        A_phi, wq0, wq)
+                    wq_f[ir, iz, i_dir] = track_mag_line(
+                                            ir, iz, r, z, i_dir, rr10,
+                                            flux_mag_r, flux_mag_z,
+                                            A_phi, wq0, wq
+                                        )
             
 
             #. coordinate loop
@@ -426,13 +445,17 @@ if __name__=="__main__":
                             + (A_phi[ir+1, iz] + A_phi[ir+1, iz+1])*r[ir+1]
                         #. Track mag.line main
                         i_dir = 1   #sign + -> forward
-                        wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
-                                                            flux_mag_r, flux_mag_z,
-                                                            A_phi, wq0, wq)
+                        wq_f[ir, iz, i_dir] = track_mag_line(
+                                                    ir, iz, r, z, i_dir, rr10,
+                                                    flux_mag_r, flux_mag_z,
+                                                    A_phi, wq0, wq
+                                                )
                         i_dir = 2   #sign - -> backward
-                        wq_f[ir, iz, i_dir] = track_mag_line(ir, iz, r, z, i_dir, rr10,
-                                                            flux_mag_r, flux_mag_z,
-                                                            A_phi, wq0, wq)
+                        wq_f[ir, iz, i_dir] = track_mag_line(
+                                                    ir, iz, r, z, i_dir, rr10,
+                                                    flux_mag_r, flux_mag_z,
+                                                    A_phi, wq0, wq
+                                                )
                         r_mid = r[ir] + 0.5*dr  #cell の中心 
 
 
@@ -446,11 +469,14 @@ if __name__=="__main__":
                         #開磁気面（閉磁気面以外）
                         else:
                             #. 磁力線の一方が特定のCHI電極に交差している場合    
-                            if ((wq_f[ir, iz, 2] == 1 or wq_f[ir, iz, 2] == 2) and
-                                np.all([wq_f[ir, iz, 1] != 1,
+                            if (
+                                    (wq_f[ir, iz, 2] == 1 or wq_f[ir, iz, 2] == 2)
+                                    and np.all([
+                                            wq_f[ir, iz, 1] != 1,
                                             wq_f[ir, iz, 1] != 2,
                                             wq_f[ir, iz, 1] != 20,
-                                            elect[wq_f[ir, iz, 1]-1, 2] != 0])
+                                            elect[wq_f[ir, iz, 1]-1, 2] != 0
+                                    ])
                                 ):
 
                                 wq_f[ir, iz, 0] = wq_f[ir, iz, 1]   #なぞ？
